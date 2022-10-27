@@ -3,7 +3,7 @@ import { dirname, filename, join } from "desm";
 import http from "node:http";
 import path from "node:path";
 import fse from "fs-extra";
-import gifsicle from "gifsicle";
+// import gifsicle from "gifsicle";
 
 const DIRNAME = dirname(import.meta.url);
 
@@ -34,7 +34,7 @@ async function gifCompress(opts) {
   args.push(opts.inputFile);
   args.push("-o");
   args.push(opts.outputFile);
-  await execa(gifsicle, args, {
+  await execa("gifsicle", args, {
     nodeOptions: ["--max-old-space-size=1000"],
   });
   return opts.outputFile;

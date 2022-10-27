@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/gexin1/test-gifsicle#readme",
   "dependencies": {
+    "@remotion/renderer": "^3.2.38",
     "desm": "^1.3.0",
     "execa": "^6.1.0",
     "fs-extra": "^10.1.0",

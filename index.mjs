@@ -3,58 +3,54 @@ import { dirname, filename, join } from "desm";
 import http from "node:http";
 import path from "node:path";
 import fse from "fs-extra";
+import { getCompositions, renderMedia } from "@remotion/renderer";
+
 // import gifsicle from "gifsicle";
 
 const DIRNAME = dirname(import.meta.url);
 
-function computeGifsicleArgs(opts) {
-  if (opts.colors === undefined) {
-    opts.colors = 80;
-  }
 
-  if (opts.compress === undefined) {
-    opts.compress = 80;
-  }
-  const args = [
-    "-O3",
-    "--lossy=" + opts.compress,
-    "--colors=" + opts.colors,
-    "--no-warnings",
-  ];
 
-  if (opts.loop === false) {
-    args.push("--no-loopcount");
-  }
+async function renderVideo() {
+  // The composition you want to render
+  const compositionId = "HelloWorld";
 
-  return args;
-}
+  // You only have to do this once, you can reuse the bundle.
+  const entry = "./src/index";
 
-async function gifCompress(opts) {
-  const args = computeGifsicleArgs(opts);
-  args.push(opts.inputFile);
-  args.push("-o");
-  args.push(opts.outputFile);
-  await execa("gifsicle", args, {
-    nodeOptions: ["--max-old-space-size=1000"],
+  const bundleLocation = path.resolve(DIRNAME, "./bundle");
+
+  // Extract all the compositions you have defined in your project
+  // from the webpack bundle.
+  const comps = await getCompositions(bundleLocation, {
+    serveUrl: bundleLocation,
   });
-  return opts.outputFile;
+
+  // Select the composition you want to render.
+  const composition = comps.find((c) => c.id === compositionId);
+
+  // Ensure the composition exists
+  if (!composition) {
+    throw new Error(`No composition with the ID ${compositionId} found.
+  Review "${entry}" for the correct ID.`);
+  }
+  const outputLocation = path.resolve(DIRNAME, `out/${Math.random()}.mp4`);
+
+  console.log("Attempting to render:", outputLocation);
+  await renderMedia({
+    composition,
+    serveUrl: bundleLocation,
+    codec: "h264",
+    outputLocation,
+    disallowParallelEncoding: true,
+  });
+  console.log("Render done!");
 }
 
 const server = http.createServer(async (req, res) => {
   console.log(`开始处理请求`);
   console.time("handle");
-  const inputPath = path.resolve(DIRNAME, "./assets/sy.gif");
-  const outPath = path.resolve(
-    DIRNAME,
-    `./tmp/${Math.random().toFixed(5)}.gif`
-  );
-
-  fse.ensureFileSync(outPath);
-
-  await gifCompress({
-    inputFile: inputPath,
-    outputFile: outPath,
-  });
+  await renderVideo();
   console.timeEnd("handle");
   console.log(`处理完成`);
   return res.end("Ook!");
